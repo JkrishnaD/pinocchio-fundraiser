@@ -3,6 +3,8 @@ use pinocchio::{ProgramResult, account_info::AccountInfo, entrypoint, pubkey::Pu
 
 mod instructions;
 mod state;
+mod constants;
+mod error;
 
 entrypoint!(process_instruction);
 
