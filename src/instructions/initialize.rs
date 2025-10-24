@@ -57,14 +57,15 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // Validate the vault account
-    let vault_account =
-        TokenAccount::from_account_info(vault).map_err(|_| ProgramError::InvalidAccountData)?;
-    if vault_account.owner() != fundraiser.key() {
-        return Err(ProgramError::IllegalOwner);
-    }
-    if vault_account.mint() != mint_to_raise.key() {
+    // Derive and validate vault PDA
+    let (vault_pda, vault_bump) =
+        pubkey::find_program_address(&[b"vault", fundraiser.key().as_ref()], &crate::ID);
+    if vault.key() != &vault_pda {
         return Err(ProgramError::InvalidAccountData);
+    }
+    // Check vault is uninitialized
+    if !vault.data_is_empty() {
+        return Err(ProgramError::AccountAlreadyInitialized);
     }
 
     let mint_state =
@@ -95,6 +96,17 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
     fundraiser_state.mint_to_raise = *mint_to_raise.key();
     fundraiser_state.amount_to_raise = instruction_data.amount;
     fundraiser_state.time_started = Clock::get()?.unix_timestamp.to_le_bytes();
+
+    // Create the vault account
+    pinocchio_associated_token_account::instructions::Create {
+        funding_account: maker,
+        account: vault,
+        wallet: fundraiser,
+        mint: mint_to_raise,
+        token_program: token_program,
+        system_program: system_program,
+    }
+    .invoke()?;
 
     Ok(())
 }
