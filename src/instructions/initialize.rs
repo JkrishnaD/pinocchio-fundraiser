@@ -2,6 +2,7 @@ use bytemuck::{Pod, Zeroable};
 use pinocchio::{
     ProgramResult,
     account_info::AccountInfo,
+    instruction::{Seed, Signer},
     msg,
     program_error::ProgramError,
     pubkey,
@@ -14,10 +15,10 @@ use crate::{constants::MIN_AMOUNT_TO_RAISE, error::FundraiserErrors, state::Fund
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct InitializeInstructionData {
-    amount: [u8; 8],
-    duration: [u8; 1],
-    bump: [u8; 1],
+    pub amount: [u8; 8],
+    pub duration: [u8; 1],
 }
+
 pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
     msg!("Initializing The Fundraiser");
 
@@ -28,7 +29,8 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
         vault,
         system_program,
         token_program,
-        _associated_token_program @ ..,
+        _associated_token_program,
+        _rent_sysvar @ ..,
     ] = accounts
     else {
         return Err(ProgramError::NotEnoughAccountKeys);
@@ -45,25 +47,20 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
     if !fundraiser.data_is_empty() {
         return Err(ProgramError::AccountAlreadyInitialized);
     }
-    let fundraiser_pda = pubkey::create_program_address(
-        &[
-            b"fundraiser",
-            maker.key().as_ref(),
-            &[instruction_data.bump[0]],
-        ],
-        &crate::ID,
-    )?;
+    let (fundraiser_pda, bump) =
+        pubkey::find_program_address(&[b"fundraiser", maker.key().as_ref()], &crate::ID);
     if fundraiser.key() != &fundraiser_pda {
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // Derive and validate vault PDA
-    let (vault_pda, vault_bump) =
-        pubkey::find_program_address(&[b"vault", fundraiser.key().as_ref()], &crate::ID);
-    if vault.key() != &vault_pda {
-        return Err(ProgramError::InvalidAccountData);
-    }
-    // Check vault is uninitialized
+    let seed_bump = [bump];
+    let seeds = [
+        Seed::from(b"fundraiser"),
+        Seed::from(maker.key().as_ref()),
+        Seed::from(&seed_bump),
+    ];
+    let signer = Signer::from(&seeds);
+
     if !vault.data_is_empty() {
         return Err(ProgramError::AccountAlreadyInitialized);
     }
@@ -85,12 +82,12 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
         lamports: Rent::get()?.minimum_balance(Fundraiser::LEN),
         owner: &crate::ID,
     }
-    .invoke()?;
+    .invoke_signed(&[signer])?;
 
     // Initializing the Fundraiser account
     let fundraiser_state = Fundraiser::load(fundraiser)?;
     fundraiser_state.maker = *maker.key();
-    fundraiser_state.bump = instruction_data.bump;
+    fundraiser_state.bump = [bump];
     fundraiser_state.current_amount = 0u64.to_le_bytes();
     fundraiser_state.duration = instruction_data.duration;
     fundraiser_state.mint_to_raise = *mint_to_raise.key();

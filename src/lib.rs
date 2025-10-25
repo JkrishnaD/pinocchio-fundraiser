@@ -1,10 +1,13 @@
 #![allow(warnings)]
 use pinocchio::{ProgramResult, account_info::AccountInfo, entrypoint, pubkey::Pubkey};
 
-mod instructions;
-mod state;
+use crate::instructions::FundraiserInstructions;
+
 mod constants;
 mod error;
+mod instructions;
+mod state;
+mod tests;
 
 entrypoint!(process_instruction);
 
@@ -21,5 +24,11 @@ pub fn process_instruction(
         .split_first()
         .ok_or(pinocchio::program_error::ProgramError::InvalidInstructionData)?;
 
+    match FundraiserInstructions::try_from(discriminator)? {
+        FundraiserInstructions::Initialize => {
+            instructions::process_initialize_fundraiser(accounts, data)?;
+        }
+        _ => return Err(pinocchio::program_error::ProgramError::InvalidInstructionData),
+    }
     Ok(())
 }
