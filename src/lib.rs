@@ -28,6 +28,9 @@ pub fn process_instruction(
         FundraiserInstructions::Initialize => {
             instructions::process_initialize_fundraiser(accounts, data)?;
         }
+        FundraiserInstructions::Contribute => {
+            instructions::process_contribute(accounts, data)?;
+        }
         _ => return Err(pinocchio::program_error::ProgramError::InvalidInstructionData),
     }
     Ok(())
