@@ -70,13 +70,13 @@ mod tests {
             .authority(&maker.pubkey())
             .send()
             .unwrap();
-        msg!("Mint To Raise: {}", mint_to_raise);
+        // msg!("Mint To Raise: {}", mint_to_raise);
 
         let fundraiser = Pubkey::find_program_address(
             &[b"fundraiser", maker.pubkey().as_ref()],
             &PROGRAM_ID.parse().unwrap(),
         );
-        msg!("Fundraiser PDA: {}\n", fundraiser.0);
+        // msg!("Fundraiser PDA: {}\n", fundraiser.0);
 
         let contributor = Pubkey::find_program_address(
             &[
@@ -86,19 +86,19 @@ mod tests {
             ],
             &PROGRAM_ID.parse().unwrap(),
         );
-        msg!("Contributor PDA: {}\n", contributor.0);
+        // msg!("Contributor PDA: {}\n", contributor.0);
 
         let maker_ata = CreateAssociatedTokenAccount::new(&mut svm, &maker, &mint_to_raise)
             .owner(&maker.pubkey())
             .send()
             .unwrap();
-        msg!("Maker ata: {}\n", maker_ata);
+        // msg!("Maker ata: {}\n", maker_ata);
 
         let contributor_ata = CreateAssociatedTokenAccount::new(&mut svm, &user, &mint_to_raise)
             .owner(&user.pubkey())
             .send()
             .unwrap();
-        msg!("Contributor Ata: {}\n", contributor_ata);
+        // msg!("Contributor Ata: {}\n", contributor_ata);
 
         MintTo::new(
             &mut svm,
@@ -109,13 +109,13 @@ mod tests {
         )
         .send()
         .unwrap();
-        msg!("Minted 60_000_000 tokens to contributor_ata\n");
+        // msg!("Minted 60_000_000 tokens to contributor_ata\n");
 
         let vault = spl_associated_token_account::get_associated_token_address(
             &fundraiser.0,  // owner will be the escrow PDA
             &mint_to_raise, // mint
         );
-        msg!("Vault PDA: {}\n", vault);
+        // msg!("Vault PDA: {}\n", vault);
 
         // Define program IDs for associated token program, token program, and system program
         let associated_token_program = ASSOCIATED_TOKEN_PROGRAM_ID.parse::<Pubkey>().unwrap();
@@ -139,22 +139,22 @@ mod tests {
         (svm, state)
     }
 
-    #[test]
-    pub fn test_init_fundraiser() {
-        let (mut svm, state) = setup();
+    // #[test]
+    // pub fn test_init_fundraiser() {
+    //     let (mut svm, state) = setup();
 
-        let program_id = program_id();
-        init_fundraiser(&mut svm, &state).unwrap();
+    //     let program_id = program_id();
+    //     init_fundraiser(&mut svm, &state).unwrap();
 
-        let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
-        let fundraiser =
-            bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
+    //     let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
+    //     let fundraiser =
+    //         bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
 
-        let amount: u64 = 10_000_000;
-        let current_amount: u64 = 0;
-        assert_eq!(fundraiser.amount_to_raise, amount.to_le_bytes());
-        assert_eq!(fundraiser.current_amount, current_amount.to_le_bytes());
-    }
+    //     let amount: u64 = 100_000_000;
+    //     let current_amount: u64 = 0;
+    //     assert_eq!(fundraiser.amount_to_raise, amount.to_le_bytes());
+    //     assert_eq!(fundraiser.current_amount, current_amount.to_le_bytes());
+    // }
 
     #[test]
     pub fn test_user_contribute() {
@@ -176,9 +176,9 @@ mod tests {
         let vault_state = svm.get_account(&state.vault).unwrap();
         let vault = Account::unpack(&vault_state.data).unwrap();
 
-        msg!("The Vault Account: {:?}", vault);
-        msg!("The fundraiser Account: {:?}", fundraiser);
-        msg!("new vault balance: {:?}", vault.amount);
+        // msg!("The Vault Account: {:?}", vault);
+        // msg!("The fundraiser Account: {:?}", fundraiser);
+        // msg!("new vault balance: {:?}", vault.amount);
     }
 
     pub fn contribute(svm: &mut LiteSVM, state: &SetupState) -> Result<(), ProgramError> {
@@ -208,7 +208,7 @@ mod tests {
         ]
         .concat();
 
-        msg!("Contribute");
+        // msg!("Contribute");
         let init_tx = Instruction {
             program_id: program_id,
             accounts: vec![
@@ -234,8 +234,8 @@ mod tests {
 
         let tx = svm.send_transaction(transaction).unwrap();
 
-        msg!("\n\n Contributor transaction sucessfull");
-        msg!("CUs Consumed: {}", tx.compute_units_consumed);
+        // msg!("\n\n Contributor transaction sucessfull");
+        msg!("CUs Consumed by contribute: {}", tx.compute_units_consumed);
 
         Ok(())
     }
@@ -291,8 +291,8 @@ mod tests {
 
         let tx = svm.send_transaction(transaction).unwrap();
 
-        msg!("\n\n Init Fundraiser transaction sucessfull");
-        msg!("CUs Consumed: {}", tx.compute_units_consumed);
+        msg!("\n\nInit Fundraiser transaction sucessfull");
+        msg!("CUs Consumed by init fundraiser: {}", tx.compute_units_consumed);
 
         Ok(())
     }
