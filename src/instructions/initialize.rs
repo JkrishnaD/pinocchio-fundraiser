@@ -15,7 +15,7 @@ use crate::{constants::MIN_AMOUNT_TO_RAISE, error::FundraiserErrors, state::Fund
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct InitializeInstructionData {
     pub amount: [u8; 8],
-    pub duration: [u8; 1],
+    pub duration: [u8; 8],
 }
 
 pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {

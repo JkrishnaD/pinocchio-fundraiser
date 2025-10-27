@@ -9,7 +9,7 @@ pub struct Fundraiser {
     pub amount_to_raise: [u8; 8],
     pub current_amount: [u8; 8],
     pub time_started: [u8; 8],
-    pub duration: [u8; 1],
+    pub duration: [u8; 8],
     pub bump: [u8; 1],
 }
 

@@ -308,11 +308,11 @@ mod tests {
         let program_id = program_id();
 
         let amount: u64 = 100_000_000; // 1 token in 6 decimals
-        let duration: u8 = 10; // 10 seconds, for example
+        let duration: u64 = 10; // 10 seconds, for example
 
         let init_data_struct: InitializeInstructionData = InitializeInstructionData {
             amount: amount.to_le_bytes(),
-            duration: duration.to_be_bytes(),
+            duration: duration.to_le_bytes(),
         };
 
         // Serialize into bytes
