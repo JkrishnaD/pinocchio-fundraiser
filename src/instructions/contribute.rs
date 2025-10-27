@@ -3,7 +3,6 @@ use pinocchio::{
     ProgramResult,
     account_info::AccountInfo,
     instruction::{Seed, Signer},
-    msg,
     program_error::ProgramError,
     pubkey,
     sysvars::{Sysvar, clock::Clock, rent::Rent},
@@ -72,11 +71,11 @@ pub fn process_contribute(accounts: &[AccountInfo], data: &[u8]) -> ProgramResul
 
         // validating the vault owner
         let vault_state = TokenAccount::from_account_info(vault)?;
-        if vault_state.owner() != fundraiser.key() {
-            return Err(ProgramError::InvalidAccountOwner);
-        }
         if vault_state.mint() != mint_to_raise.key() {
             return Err(ProgramError::InvalidAccountData);
+        }
+        if vault_state.owner() != fundraiser.key() {
+            return Err(ProgramError::InvalidAccountOwner);
         }
 
         // Converting the amount_to_raise from bytes to u64
@@ -140,8 +139,6 @@ pub fn process_contribute(accounts: &[AccountInfo], data: &[u8]) -> ProgramResul
         }
 
         if contributor_account.data_is_empty() {
-            msg!("Creating the contributor account");
-
             let seed_bump = [bump];
             let signer_seeds = [
                 Seed::from(b"contributor"),

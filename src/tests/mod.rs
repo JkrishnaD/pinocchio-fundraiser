@@ -139,22 +139,22 @@ mod tests {
         (svm, state)
     }
 
-    // #[test]
-    // pub fn test_init_fundraiser() {
-    //     let (mut svm, state) = setup();
+    #[test]
+    pub fn test_init_fundraiser() {
+        let (mut svm, state) = setup();
 
-    //     let program_id = program_id();
-    //     init_fundraiser(&mut svm, &state).unwrap();
+        let program_id = program_id();
+        init_fundraiser(&mut svm, &state).unwrap();
 
-    //     let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
-    //     let fundraiser =
-    //         bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
+        let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
+        let fundraiser =
+            bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
 
-    //     let amount: u64 = 100_000_000;
-    //     let current_amount: u64 = 0;
-    //     assert_eq!(fundraiser.amount_to_raise, amount.to_le_bytes());
-    //     assert_eq!(fundraiser.current_amount, current_amount.to_le_bytes());
-    // }
+        let amount: u64 = 100_000_000;
+        let current_amount: u64 = 0;
+        assert_eq!(fundraiser.amount_to_raise, amount.to_le_bytes());
+        assert_eq!(fundraiser.current_amount, current_amount.to_le_bytes());
+    }
 
     #[test]
     pub fn test_user_contribute() {
@@ -240,7 +240,7 @@ mod tests {
         Ok(())
     }
 
-    pub fn init_fundraiser(svm: &mut LiteSVM, state: &SetupState) -> Result<(), Error> {
+    pub fn init_fundraiser(mut svm: &mut LiteSVM, state: &SetupState) -> Result<(), Error> {
         let maker = &state.maker;
         let maker_ata = state.maker_ata;
         let mint_to_raise = state.mint_to_raise;
@@ -249,6 +249,12 @@ mod tests {
         let token_program = state.token_program;
         let system_program = state.system_program;
         let associated_token_program = state.associated_token_program;
+
+        CreateAssociatedTokenAccount::new(&mut svm, &maker, &mint_to_raise)
+            .owner(&fundraiser.0)
+            .token_program_id(&token_program)
+            .send()
+            .unwrap();
 
         let program_id = program_id();
 
@@ -292,7 +298,10 @@ mod tests {
         let tx = svm.send_transaction(transaction).unwrap();
 
         msg!("\n\nInit Fundraiser transaction sucessfull");
-        msg!("CUs Consumed by init fundraiser: {}", tx.compute_units_consumed);
+        msg!(
+            "CUs Consumed by init fundraiser: {}",
+            tx.compute_units_consumed
+        );
 
         Ok(())
     }

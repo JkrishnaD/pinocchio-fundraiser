@@ -3,7 +3,6 @@ use pinocchio::{
     ProgramResult,
     account_info::AccountInfo,
     instruction::{Seed, Signer},
-    msg,
     program_error::ProgramError,
     pubkey,
     sysvars::{Sysvar, clock::Clock, rent::Rent},
@@ -20,8 +19,6 @@ pub struct InitializeInstructionData {
 }
 
 pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
-    msg!("Initializing The Fundraiser");
-
     let [
         maker,
         mint_to_raise,
@@ -52,6 +49,10 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
     if fundraiser.key() != &fundraiser_pda {
         return Err(ProgramError::InvalidAccountData);
     }
+    // Vault account validation
+    let vault_data = TokenAccount::from_account_info(vault)?;
+    assert_eq!(vault_data.owner(), &fundraiser_pda,);
+    assert_eq!(vault_data.mint(), mint_to_raise.key(),);
 
     let seed_bump = [bump];
     let seeds = [
@@ -60,10 +61,6 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
         Seed::from(&seed_bump),
     ];
     let signer = Signer::from(&seeds);
-
-    if !vault.data_is_empty() {
-        return Err(ProgramError::AccountAlreadyInitialized);
-    }
 
     let mint_state =
         Mint::from_account_info(mint_to_raise).map_err(|_| ProgramError::InvalidAccountData)?;
@@ -94,16 +91,16 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
     fundraiser_state.amount_to_raise = instruction_data.amount;
     fundraiser_state.time_started = Clock::get()?.unix_timestamp.to_le_bytes();
 
-    // Create the vault account
-    pinocchio_associated_token_account::instructions::Create {
-        funding_account: maker,
-        account: vault,
-        wallet: fundraiser,
-        mint: mint_to_raise,
-        token_program: token_program,
-        system_program: system_program,
-    }
-    .invoke()?;
+    // // Create the vault account
+    // pinocchio_associated_token_account::instructions::Create {
+    //     funding_account: maker,
+    //     account: vault,
+    //     wallet: fundraiser,
+    //     mint: mint_to_raise,
+    //     token_program: token_program,
+    //     system_program: system_program,
+    // }
+    // .invoke()?;
 
     Ok(())
 }
