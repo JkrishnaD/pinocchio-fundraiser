@@ -16,7 +16,14 @@ pub struct Fundraiser {
 impl Fundraiser {
     pub const LEN: usize = core::mem::size_of::<Fundraiser>();
 
-    pub fn load(fundraiser_account: &AccountInfo) -> Result<&mut Self, ProgramError> {
+    pub fn load(fundraiser_account: &AccountInfo) -> Result<&Self, ProgramError> {
+        let data = unsafe { fundraiser_account.borrow_data_unchecked() };
+        let fundraiser_state = bytemuck::try_from_bytes::<Fundraiser>(data)
+            .map_err(|_| ProgramError::InvalidAccountData)?;
+        Ok(fundraiser_state)
+    }
+
+    pub fn load_mut(fundraiser_account: &AccountInfo) -> Result<&mut Self, ProgramError> {
         let data = unsafe { fundraiser_account.borrow_mut_data_unchecked() };
         let fundraiser_state = bytemuck::try_from_bytes_mut::<Fundraiser>(data)
             .map_err(|_| ProgramError::InvalidAccountData)?;

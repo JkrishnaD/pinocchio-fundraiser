@@ -82,7 +82,7 @@ pub fn process_initialize_fundraiser(accounts: &[AccountInfo], data: &[u8]) -> P
     .invoke_signed(&[signer])?;
 
     // Initializing the Fundraiser account
-    let fundraiser_state = Fundraiser::load(fundraiser)?;
+    let fundraiser_state = Fundraiser::load_mut(fundraiser)?;
     fundraiser_state.maker = *maker.key();
     fundraiser_state.bump = [bump];
     fundraiser_state.current_amount = 0u64.to_le_bytes();

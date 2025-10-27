@@ -12,7 +12,14 @@ pub struct Contributor {
 impl Contributor {
     pub const LEN: usize = core::mem::size_of::<Contributor>();
 
-    pub fn load(contributor_account: &AccountInfo) -> Result<&mut Self, ProgramError> {
+    pub fn load(contributor_account: &AccountInfo) -> Result<&Self, ProgramError> {
+        let data = unsafe { contributor_account.borrow_data_unchecked() };
+        let contributor_state = bytemuck::try_from_bytes::<Contributor>(data)
+            .map_err(|_| ProgramError::InvalidAccountData)?;
+        Ok(contributor_state)
+    }
+
+    pub fn load_mut(contributor_account: &AccountInfo) -> Result<&mut Self, ProgramError> {
         let data = unsafe { contributor_account.borrow_mut_data_unchecked() };
         let contributor_state = bytemuck::try_from_bytes_mut::<Contributor>(data)
             .map_err(|_| ProgramError::InvalidAccountData)?;
