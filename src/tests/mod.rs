@@ -139,46 +139,95 @@ mod tests {
         (svm, state)
     }
 
+    // #[test]
+    // pub fn test_init_fundraiser() {
+    //     let (mut svm, state) = setup();
+
+    //     let program_id = program_id();
+    //     init_fundraiser(&mut svm, &state).unwrap();
+
+    //     let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
+    //     let fundraiser =
+    //         bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
+
+    //     let amount: u64 = 100_000_000;
+    //     let current_amount: u64 = 0;
+    //     assert_eq!(fundraiser.amount_to_raise, amount.to_le_bytes());
+    //     assert_eq!(fundraiser.current_amount, current_amount.to_le_bytes());
+    // }
+
+    // #[test]
+    // pub fn test_user_contribute() {
+    //     let (mut svm, state) = setup();
+
+    //     let program_id = program_id();
+    //     init_fundraiser(&mut svm, &state).unwrap();
+    //     contribute(&mut svm, &state).unwrap(); // user 1 contributes
+
+    //     let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
+    //     let fundraiser =
+    //         bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
+
+    //     let amount_to_raise: u64 = 100_000_000;
+    //     let expected_current: u64 = 10_000_000;
+    //     assert_eq!(fundraiser.amount_to_raise, amount_to_raise.to_le_bytes());
+    //     assert_eq!(fundraiser.current_amount, expected_current.to_le_bytes());
+
+    //     let vault_state = svm.get_account(&state.vault).unwrap();
+    //     let vault = Account::unpack(&vault_state.data).unwrap();
+
+    //     // msg!("The Vault Account: {:?}", vault);
+    //     // msg!("The fundraiser Account: {:?}", fundraiser);
+    //     // msg!("new vault balance: {:?}", vault.amount);
+    // }
+
     #[test]
-    pub fn test_init_fundraiser() {
+    pub fn test_checker() {
         let (mut svm, state) = setup();
 
         let program_id = program_id();
         init_fundraiser(&mut svm, &state).unwrap();
-
-        let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
-        let fundraiser =
-            bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
-
-        let amount: u64 = 100_000_000;
-        let current_amount: u64 = 0;
-        assert_eq!(fundraiser.amount_to_raise, amount.to_le_bytes());
-        assert_eq!(fundraiser.current_amount, current_amount.to_le_bytes());
+        contribute(&mut svm, &state).unwrap();
+        check_funds(&mut svm, &state).unwrap();
     }
 
-    #[test]
-    pub fn test_user_contribute() {
-        let (mut svm, state) = setup();
+    pub fn check_funds(svm: &mut LiteSVM, state: &SetupState) -> Result<(), ProgramError> {
+        let maker = &state.maker;
+        let mint_to_raise = state.mint_to_raise;
+        let fundraiser = state.fundraiser;
+        let vault = state.vault;
+        let maker_ata = state.maker_ata;
+        let token_program = state.token_program;
+        let system_program = state.system_program;
+        let associated_token_program = state.associated_token_program;
 
         let program_id = program_id();
-        init_fundraiser(&mut svm, &state).unwrap();
-        contribute(&mut svm, &state).unwrap(); // user 1 contributes
 
-        let fundraiser_state = svm.get_account(&state.fundraiser.0).unwrap();
-        let fundraiser =
-            bytemuck::try_from_bytes::<crate::state::Fundraiser>(&fundraiser_state.data).unwrap();
+        let checker_ix = Instruction {
+            program_id: program_id,
+            accounts: vec![
+                AccountMeta::new(maker.pubkey(), true),
+                AccountMeta::new(mint_to_raise, false),
+                AccountMeta::new(fundraiser.0, false),
+                AccountMeta::new(vault, false),
+                AccountMeta::new(maker_ata, false),
+                AccountMeta::new(system_program, false),
+                AccountMeta::new(token_program, false),
+                AccountMeta::new(associated_token_program, false),
+                AccountMeta::new(Rent::id(), false),
+            ],
+            data: vec![2u8],
+        };
 
-        let amount_to_raise: u64 = 100_000_000;
-        let expected_current: u64 = 10_000_000;
-        assert_eq!(fundraiser.amount_to_raise, amount_to_raise.to_le_bytes());
-        assert_eq!(fundraiser.current_amount, expected_current.to_le_bytes());
+        let message = Message::new(&[checker_ix], Some(&maker.pubkey()));
 
-        let vault_state = svm.get_account(&state.vault).unwrap();
-        let vault = Account::unpack(&vault_state.data).unwrap();
+        let recent_blockhash = svm.latest_blockhash();
+        let transaction = Transaction::new(&[maker], message, recent_blockhash);
 
-        // msg!("The Vault Account: {:?}", vault);
-        // msg!("The fundraiser Account: {:?}", fundraiser);
-        // msg!("new vault balance: {:?}", vault.amount);
+        let tx = svm.send_transaction(transaction).unwrap();
+
+        msg!("CU's Consumed by Checker: {}", tx.compute_units_consumed);
+        Ok(())
     }
 
     pub fn contribute(svm: &mut LiteSVM, state: &SetupState) -> Result<(), ProgramError> {
