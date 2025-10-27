@@ -31,6 +31,9 @@ pub fn process_instruction(
         FundraiserInstructions::Contribute => {
             instructions::process_contribute(accounts, data)?;
         }
+        FundraiserInstructions::Checker => {
+            instructions::process_checker(accounts, data)?;
+        }
         _ => return Err(pinocchio::program_error::ProgramError::InvalidInstructionData),
     }
     Ok(())

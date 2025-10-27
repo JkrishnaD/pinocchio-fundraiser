@@ -7,6 +7,7 @@ pub enum FundraiserErrors {
     FundraiserExpired = 0x3,
     InvalidContributor = 0x4,
     FundraiserGoalReached = 0x5,
+    TargetNotMet = 0x6,
 }
 
 impl From<FundraiserErrors> for ProgramError {
@@ -24,6 +25,7 @@ impl FundraiserErrors {
             FundraiserErrors::FundraiserExpired => "Fundraiser expired",
             FundraiserErrors::InvalidContributor => "Invalid contributor",
             FundraiserErrors::FundraiserGoalReached => "Fundraiser goal reached",
+            FundraiserErrors::TargetNotMet => "Target not met",
         }
     }
 }

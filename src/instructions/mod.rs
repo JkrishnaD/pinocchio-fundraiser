@@ -1,9 +1,10 @@
 pub mod contribute;
 pub mod initialize;
+pub mod checker;
 
 pub use contribute::*;
 pub use initialize::*;
-
+pub use checker::*;
 pub enum FundraiserInstructions {
     Initialize = 0,
     Contribute = 1,
