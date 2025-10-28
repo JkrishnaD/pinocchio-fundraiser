@@ -181,14 +181,63 @@ mod tests {
     //     // msg!("new vault balance: {:?}", vault.amount);
     // }
 
+    // #[test]
+    // pub fn test_checker() {
+    //     let (mut svm, state) = setup();
+
+    //     let program_id = program_id();
+    //     init_fundraiser(&mut svm, &state).unwrap();
+    //     contribute(&mut svm, &state).unwrap();
+    //     check_funds(&mut svm, &state).unwrap();
+    // }
+
     #[test]
-    pub fn test_checker() {
+    pub fn test_refund() {
         let (mut svm, state) = setup();
 
         let program_id = program_id();
         init_fundraiser(&mut svm, &state).unwrap();
         contribute(&mut svm, &state).unwrap();
         check_funds(&mut svm, &state).unwrap();
+        refund(&mut svm, &state).unwrap();
+    }
+
+    pub fn refund(svm: &mut LiteSVM, state: &SetupState) -> Result<(), ProgramError> {
+        let contributor = &state.user;
+        let maker = &state.maker;
+        let mint_to_raise = state.mint_to_raise;
+        let fundraiser = state.fundraiser;
+        let contributor_account = state.contributor;
+        let contributor_ata = state.contributor_ata;
+        let vault = state.vault;
+        let token_program = state.token_program;
+        let system_program = state.system_program;
+
+        let refund_ix = Instruction {
+            program_id: program_id(),
+            accounts: vec![
+                AccountMeta::new(contributor.pubkey(), true),
+                AccountMeta::new(maker.pubkey(), false),
+                AccountMeta::new(mint_to_raise, false),
+                AccountMeta::new(fundraiser.0, false),
+                AccountMeta::new(contributor_account.0, false),
+                AccountMeta::new(contributor_ata, false),
+                AccountMeta::new(vault, false),
+                AccountMeta::new(token_program, false),
+                AccountMeta::new(system_program, false),
+            ],
+            data: vec![3u8],
+        };
+
+        let message = Message::new(&[refund_ix], Some(&contributor.pubkey()));
+
+        let recent_blockhash = svm.latest_blockhash();
+        let transaction = Transaction::new(&[contributor], message, recent_blockhash);
+
+        let tx = svm.send_transaction(transaction).unwrap();
+
+        msg!("CU's Consumed by Refund: {}", tx.compute_units_consumed);
+        Ok(())
     }
 
     pub fn check_funds(svm: &mut LiteSVM, state: &SetupState) -> Result<(), ProgramError> {
