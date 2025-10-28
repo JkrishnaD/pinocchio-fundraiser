@@ -34,6 +34,9 @@ pub fn process_instruction(
         FundraiserInstructions::Checker => {
             instructions::process_checker(accounts, data)?;
         }
+        FundraiserInstructions::Refund => {
+            instructions::process_refund(accounts, data)?;
+        }
         _ => return Err(pinocchio::program_error::ProgramError::InvalidInstructionData),
     }
     Ok(())

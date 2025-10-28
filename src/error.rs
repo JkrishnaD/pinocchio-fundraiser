@@ -1,5 +1,6 @@
 use pinocchio::program_error::ProgramError;
 
+#[repr(u32)]
 pub enum FundraiserErrors {
     InvalidAmount = 0x0,
     ContributionTooShort = 0x1,
@@ -8,6 +9,9 @@ pub enum FundraiserErrors {
     InvalidContributor = 0x4,
     FundraiserGoalReached = 0x5,
     TargetNotMet = 0x6,
+    TargetMet = 0x7,
+    FundraiserNotEnded = 0x8,
+    InvalidContribution = 0x9,
 }
 
 impl From<FundraiserErrors> for ProgramError {
@@ -26,6 +30,9 @@ impl FundraiserErrors {
             FundraiserErrors::InvalidContributor => "Invalid contributor",
             FundraiserErrors::FundraiserGoalReached => "Fundraiser goal reached",
             FundraiserErrors::TargetNotMet => "Target not met",
+            FundraiserErrors::TargetMet => "Target met",
+            FundraiserErrors::FundraiserNotEnded => "Fundraiser not ended",
+            FundraiserErrors::InvalidContribution => "Invalid contribution",
         }
     }
 }
